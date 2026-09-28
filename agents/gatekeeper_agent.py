@@ -1,4 +1,5 @@
-﻿from google.adk.agents import LlmAgent
+﻿from config import MODEL_NAME
+from google.adk.agents import LlmAgent
 
 GATEKEEPER_PROMPT = """You are the Gatekeeper / Mandate Agent for VentureLens, an automated
 startup pitch evaluation system. You receive a structured JSON object (already
@@ -38,6 +39,7 @@ Set route_to to "FOUNDER_DIAGNOSTIC_AGENT" if FAILED, or "MULTI_AGENT_SCORER" if
 
 gatekeeper_agent = LlmAgent(
     name="gatekeeper_agent",
-    model="gemini-3.8-flash",
+    model=MODEL_NAME,
     instruction=GATEKEEPER_PROMPT
 )
+

@@ -1,4 +1,5 @@
-﻿from google.adk.agents import LlmAgent
+﻿from config import MODEL_NAME
+from google.adk.agents import LlmAgent
 
 FINANCIAL_PROMPT = """You are the Financial & CAC/LTV Agent for VentureLens, an automated
 startup pitch evaluation system. You receive a structured JSON object (extracted
@@ -40,6 +41,7 @@ Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 
 financial_agent = LlmAgent(
     name="financial_agent",
-    model="gemini-3.8-flash",
+    model=MODEL_NAME,
     instruction=FINANCIAL_PROMPT
 )
+

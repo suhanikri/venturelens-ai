@@ -1,4 +1,5 @@
-﻿from google.adk.agents import LlmAgent
+﻿from config import MODEL_NAME
+from google.adk.agents import LlmAgent
 
 JUDGE_PROMPT = """You are the Orchestrator / Judge Agent for VentureLens, an automated
 startup pitch evaluation system. You receive THREE scorer outputs (Market & TAM,
@@ -34,6 +35,7 @@ Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 
 judge_agent = LlmAgent(
     name="judge_agent",
-    model="gemini-3.8-flash",
+    model=MODEL_NAME,
     instruction=JUDGE_PROMPT
 )
+

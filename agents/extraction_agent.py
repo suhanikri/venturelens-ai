@@ -1,4 +1,5 @@
-﻿from google.adk.agents import LlmAgent
+﻿from config import MODEL_NAME
+from google.adk.agents import LlmAgent
 
 EXTRACTION_PROMPT = """You are a Document Extraction and Ingestion Agent for VentureLens, an automated
 startup pitch evaluation system. Your job is to extract structured information
@@ -47,6 +48,7 @@ INSTRUCTIONS:
 
 extraction_agent = LlmAgent(
     name="extraction_agent",
-    model="gemini-3.8-flash",
+    model=MODEL_NAME,
     instruction=EXTRACTION_PROMPT
 )
+

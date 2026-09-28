@@ -1,4 +1,5 @@
-﻿from google.adk.agents import LlmAgent
+﻿from config import MODEL_NAME
+from google.adk.agents import LlmAgent
 
 DIAGNOSTIC_PROMPT = """You are the Founder Diagnostic Agent for VentureLens, an automated
 startup pitch evaluation system. Your job is to turn a rejection (either from the
@@ -49,6 +50,7 @@ Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 
 diagnostic_agent = LlmAgent(
     name="diagnostic_agent",
-    model="gemini-3.8-flash",
+    model=MODEL_NAME,
     instruction=DIAGNOSTIC_PROMPT
 )
+
