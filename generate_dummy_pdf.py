@@ -37,7 +37,7 @@ Founded by two IIT graduates with prior experience in supply chain
 and sustainability consulting.
 """
 
-for line in content.split("\\n"):
+for line in content.split("\n"):
     pdf.cell(0, 8, text=line, new_x="LMARGIN", new_y="NEXT")
 
 pdf.output("sample_data/dummy_pitch_deck.pdf")

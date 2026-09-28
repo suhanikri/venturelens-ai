@@ -16,7 +16,7 @@ Status: Active
 This is a dummy GST certificate generated for testing purposes only.
 """
 
-for line in content.split("\\n"):
+for line in content.split("\n"):
     pdf.cell(0, 8, text=line, new_x="LMARGIN", new_y="NEXT")
 
 pdf.output("sample_data/dummy_gst_document.pdf")
