@@ -14,6 +14,8 @@ pitch_content.financials field (revenue, cac, ltv, burn_rate) using these criter
 2. BURN RATE SUSTAINABILITY: Does the burn rate seem sustainable relative to
    the stated revenue? Flag if burn significantly exceeds revenue with no
    clear path to profitability mentioned.
+BURN RULE: Compare monthly burn with monthly revenue (use MRR if given, otherwise annual revenue divided by 12). If burn is higher, you MUST add a flag that states both numbers. Never call burn sustainable or well-aligned when it is higher than monthly revenue.
+
 3. DATA COMPLETENESS: Are financial figures specific and disclosed, or vague/
    missing? Missing critical figures should lower the score.
 
@@ -44,4 +46,5 @@ financial_agent = LlmAgent(
     model=MODEL_NAME,
     instruction=FINANCIAL_PROMPT
 )
+
 

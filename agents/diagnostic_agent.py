@@ -39,6 +39,8 @@ INSTRUCTIONS:
 4. Maintain an encouraging, professional tone - this is meant to help the
    founder improve, not discourage them.
 
+NOTE: A GSTIN is 15 characters long (a mix of letters and digits). Never describe it as 15-digit.
+
 Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 
 {
@@ -53,4 +55,5 @@ diagnostic_agent = LlmAgent(
     model=MODEL_NAME,
     instruction=DIAGNOSTIC_PROMPT
 )
+
 

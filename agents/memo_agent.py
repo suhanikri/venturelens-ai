@@ -30,7 +30,7 @@ Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 
 memo_agent = LlmAgent(
     name="memo_agent",
-    model=MODEL_NAME,
+    model="gemini-3.8-flash",
     instruction=MEMO_PROMPT
 )
 
