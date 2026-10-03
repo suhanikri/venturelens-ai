@@ -1,5 +1,6 @@
 ﻿from config import MODEL_NAME
 from google.adk.agents import LlmAgent
+from google.genai import types
 
 MARKET_TAM_PROMPT = """You are the Market & TAM Agent for VentureLens, an automated
 startup pitch evaluation system. You receive a structured JSON object (extracted
@@ -44,6 +45,8 @@ Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 market_tam_agent = LlmAgent(
     name="market_tam_agent",
     model="gemini-3.8-flash",
-    instruction=MARKET_TAM_PROMPT
+    instruction=MARKET_TAM_PROMPT,
+    generate_content_config=types.GenerateContentConfig(temperature=0),
 )
+
 

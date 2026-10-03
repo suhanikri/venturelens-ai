@@ -58,6 +58,15 @@ async def call_agent(agent, parts, tries=4, wait_seconds=45):
             await asyncio.sleep(wait_seconds)
 
 
+RUNS = 3
+
+
+async def median_run(agent, parts, call, runs=RUNS):
+    """Run a scorer several times and keep the run with the median score."""
+    results = await asyncio.gather(*(call(agent, parts) for _ in range(runs)))
+    ordered = sorted(results, key=lambda r: int(r["score"]))
+    return ordered[len(ordered) // 2]
+
 async def run_pipeline(pitch_bytes, gst_bytes, cutoff=CUTOFF, call=call_agent):
     # 1. Extraction
     extracted = await call(extraction_agent, [
@@ -79,9 +88,9 @@ async def run_pipeline(pitch_bytes, gst_bytes, cutoff=CUTOFF, call=call_agent):
     # 3. Three scorers run in parallel
     scorer_input = [text_part(extracted)]
     scorers = list(await asyncio.gather(
-        call(market_tam_agent, scorer_input),
-        call(financial_agent, scorer_input),
-        call(traction_agent, scorer_input),
+        median_run(market_tam_agent, scorer_input, call),
+        median_run(financial_agent, scorer_input, call),
+        median_run(traction_agent, scorer_input, call),
     ))
 
     # 4. Judge. Python does the maths too, and its numbers win if they disagree.
@@ -126,3 +135,4 @@ async def run_pipeline(pitch_bytes, gst_bytes, cutoff=CUTOFF, call=call_agent):
     })])
     return {"status": "REJECTED_SCORE", "extracted": extracted, "gate": gate,
             "scorers": scorers, "judge": judge, "report": report}
+

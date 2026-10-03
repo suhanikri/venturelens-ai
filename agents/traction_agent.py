@@ -1,5 +1,6 @@
 ﻿from config import MODEL_NAME
 from google.adk.agents import LlmAgent
+from google.genai import types
 
 TRACTION_PROMPT = """You are the Traction & Moat Agent for VentureLens, an automated
 startup pitch evaluation system. You receive a structured JSON object (extracted
@@ -46,6 +47,8 @@ Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 traction_agent = LlmAgent(
     name="traction_agent",
     model="gemini-3.8-flash",
-    instruction=TRACTION_PROMPT
+    instruction=TRACTION_PROMPT,
+    generate_content_config=types.GenerateContentConfig(temperature=0),
 )
+
 
