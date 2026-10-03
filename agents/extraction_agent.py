@@ -48,7 +48,7 @@ INSTRUCTIONS:
 
 extraction_agent = LlmAgent(
     name="extraction_agent",
-    model=MODEL_NAME,
+    model="gemini-3.8-flash",
     instruction=EXTRACTION_PROMPT
 )
 

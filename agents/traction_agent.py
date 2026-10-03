@@ -45,7 +45,7 @@ Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 
 traction_agent = LlmAgent(
     name="traction_agent",
-    model=MODEL_NAME,
+    model="gemini-3.8-flash",
     instruction=TRACTION_PROMPT
 )
 

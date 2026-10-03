@@ -54,7 +54,7 @@ Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 
 diagnostic_agent = LlmAgent(
     name="diagnostic_agent",
-    model=MODEL_NAME,
+    model="gemini-3.8-flash",
     instruction=DIAGNOSTIC_PROMPT
 )
 

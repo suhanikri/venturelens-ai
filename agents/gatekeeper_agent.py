@@ -39,7 +39,7 @@ Set route_to to "FOUNDER_DIAGNOSTIC_AGENT" if FAILED, or "MULTI_AGENT_SCORER" if
 
 gatekeeper_agent = LlmAgent(
     name="gatekeeper_agent",
-    model=MODEL_NAME,
+    model="gemini-3.8-flash",
     instruction=GATEKEEPER_PROMPT
 )
 

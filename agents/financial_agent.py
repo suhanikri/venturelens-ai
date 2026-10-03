@@ -45,7 +45,7 @@ Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 
 financial_agent = LlmAgent(
     name="financial_agent",
-    model=MODEL_NAME,
+    model="gemini-3.8-flash",
     instruction=FINANCIAL_PROMPT
 )
 

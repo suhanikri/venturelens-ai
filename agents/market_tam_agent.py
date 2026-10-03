@@ -43,7 +43,7 @@ Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 
 market_tam_agent = LlmAgent(
     name="market_tam_agent",
-    model=MODEL_NAME,
+    model="gemini-3.8-flash",
     instruction=MARKET_TAM_PROMPT
 )
 

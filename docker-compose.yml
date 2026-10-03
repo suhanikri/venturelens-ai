@@ -1,0 +1,7 @@
+﻿
+services:
+  venturelens-pipeline:
+    build: .
+    env_file:
+      - .env
+    restart: on-failure:4
