@@ -3,3 +3,6 @@
 __pycache__/
 *.pyc
 .vscode/
+
+*_test.pdf
+demo_run_output.txt
