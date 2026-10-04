@@ -51,11 +51,23 @@ def show_scores(result):
     st.bar_chart(judge["sub_scores"])
 
 
+def show_workspace(result):
+    ws = result.get("workspace") or {}
+    if ws.get("enabled") is False:
+        st.info("Google Drive and Gmail are not connected on this server.")
+        return
+    if ws.get("drive_folder"):
+        st.markdown(f"Saved to Google Drive: [open folder]({ws['drive_folder']})")
+    if ws.get("email"):
+        st.caption(f"Email: {ws['email']}")
+
+
 st.title("VentureLens")
 st.caption("Upload a pitch deck and GST document to screen an application.")
 
 pitch = st.file_uploader("Pitch deck (PDF)", type="pdf")
 gst = st.file_uploader("GST document (PDF)", type="pdf")
+founder_email = st.text_input("Founder email (the feedback report is sent here if the application is not selected)")
 
 if st.button("Evaluate application", type="primary", disabled=not (pitch and gst)):
     with st.spinner("Agents are reviewing the application. This can take a few minutes."):
@@ -66,6 +78,7 @@ if st.button("Evaluate application", type="primary", disabled=not (pitch and gst
                     "pitch_deck": (pitch.name, pitch.getvalue(), "application/pdf"),
                     "gst_document": (gst.name, gst.getvalue(), "application/pdf"),
                 },
+                data={"founder_email": founder_email.strip()},
                 timeout=600,
             )
         except requests.exceptions.ConnectionError:
@@ -100,10 +113,13 @@ if result:
         st.header("Founder diagnostic report")
         render(result["report"])
 
+    show_workspace(result)
+
     if status == "ACCEPTED":
         st.download_button("Download memo (PDF)", memo_pdf(result), file_name="committee_memo.pdf", mime="application/pdf")
     else:
         st.download_button("Download diagnostic report (PDF)", diagnostic_pdf(result), file_name="founder_diagnostic.pdf", mime="application/pdf")
+
     with st.expander("Raw pipeline output"):
         st.json(result)
     st.download_button(
@@ -112,4 +128,3 @@ if result:
         file_name="venturelens_result.json",
         mime="application/json",
     )
-

@@ -2,3 +2,4 @@ streamlit
 google-cloud-storage
 google-cloud-firestore
 google-cloud-bigquery
+google-api-python-client

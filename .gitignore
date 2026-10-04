@@ -6,3 +6,6 @@ __pycache__/
 
 *_test.pdf
 demo_run_output.txt
+
+client_secret.json
+token.json

@@ -9,15 +9,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
+import delivery
 import gcp_services
 from pipeline import CUTOFF, run_pipeline
 
 MAX_BYTES = 15 * 1024 * 1024  # 15 MB per file
 
-app = FastAPI(title="VentureLens API", version="0.2.0")
+app = FastAPI(title="VentureLens API", version="0.3.0")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
@@ -43,9 +44,10 @@ async def read_pdf(upload: UploadFile, label: str) -> bytes:
 async def evaluate(
     pitch_deck: UploadFile = File(...),
     gst_document: UploadFile = File(...),
+    founder_email: str = Form(""),
     cutoff: int = CUTOFF,
 ):
-    """Run the full pipeline, then save files, result and analytics row to GCP."""
+    """Run the pipeline, save to GCP, then deliver to Google Drive and Gmail."""
     pitch = await read_pdf(pitch_deck, "Pitch deck")
     gst = await read_pdf(gst_document, "GST document")
 
@@ -59,10 +61,14 @@ async def evaluate(
 
     result["elapsed_seconds"] = round(time.time() - started, 1)
     result["application_id"] = uuid.uuid4().hex[:12]
-    # A storage problem must never lose the founder's result.
+    # A storage or delivery problem must never lose the founder's result.
     result["storage"] = gcp_services.save_application(
         result["application_id"], pitch, gst, result
     )
+    try:
+        result["workspace"] = delivery.deliver(result, pitch, gst, founder_email)
+    except Exception as e:
+        result["workspace"] = {"enabled": True, "error": str(e)}
     return result
 
 
