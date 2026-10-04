@@ -23,18 +23,18 @@ BURN RULE: Compare monthly burn with monthly revenue (use MRR if given, otherwis
    missing? Missing critical figures should lower the score.
 
 SCORING:
-Assign a score out of 30 based on:
-- 25-30: Strong LTV:CAC ratio (3x+), sustainable burn, complete data
-- 15-24: Reasonable financials but some concerns (e.g., ratio 2-3x, or high burn)
-- 5-14: Weak financials (ratio below 2x, unsustainable burn, or major gaps)
-- 0-4: Financial data missing, "not disclosed", or clearly unviable
+Assign a score out of 40 based on:
+- 33-40: Strong LTV:CAC ratio (3x+), sustainable burn, complete data
+- 20-32: Reasonable financials but some concerns (e.g., ratio 2-3x, or high burn)
+- 7-19: Weak financials (ratio below 2x, unsustainable burn, or major gaps)
+- 0-6: Financial data missing, "not disclosed", or clearly unviable
 
 Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 
 {
   "agent": "financial_cacltv",
   "score": 0,
-  "max_score": 30,
+  "max_score": 40,
   "findings": {
     "cac_ltv_ratio": 0.0,
     "margins_healthy": true or false,
@@ -50,6 +50,7 @@ financial_agent = LlmAgent(
     instruction=FINANCIAL_PROMPT,
     generate_content_config=types.GenerateContentConfig(temperature=0),
 )
+
 
 
 

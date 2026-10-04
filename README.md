@@ -11,7 +11,7 @@ A multi-agent AI system on Google Cloud that screens startup pitch applications 
 2. **Extraction Agent:** reads both files and produces a structured JSON record.
 3. **Gatekeeper Agent:** checks the mandatory eligibility and compliance requirements. Failures go straight to the Founder Diagnostic Agent.
 4. **Parallel scoring:** the Market & TAM, Financial & CAC/LTV and Traction & Moat agents review the application at the same time. Each scorer runs three times and the median score is kept, which keeps scores stable between runs.
-5. **Judge Agent:** adds up the sub-scores (3 scorers x 30 points) and compares the total with the cutoff (60). The total is calculated in Python, not by the model.
+5. **Judge Agent:** adds up the sub-scores (Market 30 + Financial 40 + Traction 30 = 100 points) and compares the total with the cutoff (60). The total is calculated in Python, not by the model.
 6. **Output:** the Committee Memo Agent (accepted) or the Founder Diagnostic Agent (rejected), each downloadable as a PDF.
 
 ## Tech stack
@@ -92,4 +92,5 @@ Live deployment (may be taken down after evaluation):
 
 - Full agent workflow, API, UI, PDF outputs and cloud storage are built and deployed.
 - A full evaluation takes roughly 35 to 45 seconds on Cloud Run.
-- Scoring is out of 90 (three scorers at 30 points each) with a cutoff of 60.
+- Scoring is out of 100 (Market 30, Financial 40, Traction 30) with a cutoff of 60.
+
