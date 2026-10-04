@@ -1,130 +1,95 @@
-# VentureLens
+﻿# VentureLens: FICCI FLO Multi-Agent Pitch Screening and Founder Feedback Engine
 
-**Multi-Agent Pitch Screening & Founder Feedback Engine**
+A multi-agent AI system on Google Cloud that screens startup pitch applications and produces transparent outputs for both the screening committee and the founder.
 
-An agentic AI system built for FICCI FLO's startup pitch evaluation process. VentureLens automates the screening of pitch deck applications using specialized AI agents, replacing slow manual review and generic rejection emails with transparent, actionable feedback for founders.
+- **Accepted startups** get a 1-page due diligence memo with investor interview questions.
+- **Rejected startups** get a diagnostic report with a scorecard, the exact rejection drivers and concrete steps to improve.
 
-## Problem
+## Workflow
 
-Organizations like FICCI FLO receive thousands of pitch applications for investment cohorts. Manual evaluation is slow, and over 90% of rejected applicants receive no real feedback on why they were cut or how to improve.
+1. **Input:** the founder uploads a pitch deck (PDF) and a GST document (PDF).
+2. **Extraction Agent:** reads both files and produces a structured JSON record.
+3. **Gatekeeper Agent:** checks the mandatory eligibility and compliance requirements. Failures go straight to the Founder Diagnostic Agent.
+4. **Parallel scoring:** the Market & TAM, Financial & CAC/LTV and Traction & Moat agents review the application at the same time. Each scorer runs three times and the median score is kept, which keeps scores stable between runs.
+5. **Judge Agent:** adds up the sub-scores (3 scorers x 30 points) and compares the total with the cutoff (60). The total is calculated in Python, not by the model.
+6. **Output:** the Committee Memo Agent (accepted) or the Founder Diagnostic Agent (rejected), each downloadable as a PDF.
 
-## Solution
-
-A multi-agent pipeline powered by Google's Agent Development Kit (ADK) and the Gemini API automates screening and generates transparent outputs for both internal evaluators and founders:
-- **Accepted startups** receive a 1-page due diligence memo for the screening committee
-- **Rejected startups** receive a diagnostic report detailing exact rejection reasons and concrete improvement steps
-
-## Pipeline Architecture
-
-    Founder submits Pitch Deck (PDF) + GST Document
-                |
-                v
-    1. Document Extraction & Ingestion Agent
-       (Extracts data -> Structured JSON)
-                |
-                v
-    2. Gatekeeper / Mandate Agent
-       (Checks eligibility & compliance)
-                |
-        +-------+-------+
-        |               |
-     FAILED          PASSED
-        |               |
-        v               v
-    5A. Founder      3. Multi-Agent Scorer (Parallel)
-    Diagnostic       - Market & TAM Agent
-    Agent            - Financial & CAC/LTV Agent
-                     - Traction & Moat Agent
-                             |
-                             v
-                     4. Orchestrator / Judge Agent
-                     (Aggregates scores vs. cutoff)
-                             |
-                     +-------+-------+
-                     |               |
-                  REJECTED        ACCEPTED
-                     |               |
-                     v               v
-             5A. Founder      5B. Committee Memo
-             Diagnostic       Agent
-             Agent
-
-## Tech Stack
+## Tech stack
 
 | Layer | Technology |
 |---|---|
-| Cloud Infrastructure | Google Cloud Platform (Cloud Run) |
-| Core Language Models | Gemini 3.8 Flash (via Gemini API) |
-| Agent Orchestration | Google Agent Development Kit (ADK) |
-| Document Parsing | Gemini Multimodal Vision |
-| Backend | Python / FastAPI |
+| Models | Gemini via Vertex AI (`gemini-3.8-flash`) |
+| Agent orchestration | Google Agent Development Kit (ADK) |
+| Backend | Python, FastAPI |
 | Frontend | Streamlit |
-| File Storage | Google Cloud Storage |
-| Structured Data | Firestore |
+| File storage | Google Cloud Storage |
+| Application data | Firestore |
 | Analytics | BigQuery |
+| Hosting | Google Cloud Run |
+| PDF reports | fpdf2 |
 
-## Project Status
+Every application is saved: the uploaded PDFs go to Cloud Storage, the full result goes to Firestore and one summary row goes to BigQuery.
 
-Currently in active development as a capstone project.
+## Project structure
 
-### Completed
-- [x] Project scaffolding and environment setup
-- [x] Document Extraction & Ingestion Agent — reads Pitch Deck + GST PDFs, outputs structured JSON, tested with and without GST data present
-- [x] Gatekeeper / Mandate Agent — validates GST presence, format, and status, tested on both pass and fail routing paths
+```
+agents/            the eight agents (extraction, gatekeeper, three scorers, judge, memo, diagnostic)
+pipeline.py        the workflow and routing logic
+api.py             FastAPI backend (POST /evaluate, GET /applications/{id}, GET /health)
+app.py             Streamlit frontend
+gcp_services.py    Cloud Storage, Firestore and BigQuery persistence
+pdf_reports.py     committee memo and founder diagnostic PDFs
+config.py          model name
+sample_data/       dummy pitch deck and GST document
+```
 
-### In Progress
-- [ ] Market & TAM Agent
-- [ ] Financial & CAC/LTV Agent
-- [ ] Traction & Moat Agent
-- [ ] Orchestrator / Judge Agent
-- [ ] Founder Diagnostic Agent
-- [ ] Committee Memo Agent
-- [ ] GCP infrastructure setup (Cloud Storage, Firestore, BigQuery)
-- [ ] FastAPI backend integration
-- [ ] Streamlit frontend
+## Run locally
 
-## Project Structure
+```
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+pip install -r requirements-gcp.txt
+pip install --no-deps "opentelemetry-api==1.42.1"
+```
 
-    venturelens/
-    ├── agents/
-    │   ├── extraction_agent.py
-    │   └── gatekeeper_agent.py
-    ├── sample_data/
-    │   ├── dummy_pitch_deck.pdf
-    │   └── dummy_gst_document.pdf
-    ├── run_extraction_test.py
-    ├── run_gatekeeper_test.py
-    ├── run_gatekeeper_fail_test.py
-    ├── generate_dummy_pdf.py
-    ├── generate_dummy_gst.py
-    ├── .env (not committed)
-    ├── .gitignore
-    └── README.md
+Create a `.env` file:
 
-## Setup
+```
+GOOGLE_GENAI_USE_VERTEXAI=TRUE
+GOOGLE_CLOUD_PROJECT=your-project-id
+GOOGLE_CLOUD_LOCATION=global
+GCS_BUCKET=your-bucket-name
+```
 
-1. Clone the repo
+Sign in to Google Cloud once, then start both services in two terminals:
 
-       git clone https://github.com/suhanikri/venturelens-ai.git
-       cd venturelens-ai
+```
+gcloud auth application-default login
 
-2. Create and activate a virtual environment
+uvicorn api:app --port 8000
+streamlit run app.py
+```
 
-       python -m venv venv
-       venv\Scripts\activate
+To run the pipeline on its own: `python run_pipeline.py`
 
-3. Install dependencies
+## Deploy to Cloud Run
 
-       pip install google-adk python-dotenv fpdf2
+The same Dockerfile serves both services. The `APP` variable chooses what starts (`api`, `ui` or `pipeline`).
 
-4. Add your Gemini API key to a `.env` file
+```
+gcloud run deploy venturelens-api --source . --region asia-south1 --allow-unauthenticated --memory 1Gi --timeout 900 --set-env-vars "APP=api,GOOGLE_GENAI_USE_VERTEXAI=TRUE,GOOGLE_CLOUD_PROJECT=your-project-id,GOOGLE_CLOUD_LOCATION=global,GCS_BUCKET=your-bucket-name"
 
-       GOOGLE_API_KEY=your_api_key_here
+gcloud run deploy venturelens-ui --source . --region asia-south1 --allow-unauthenticated --memory 1Gi --timeout 900 --set-env-vars "APP=ui,API_URL=<url of the api service>"
+```
 
-5. Run a test
+Live deployment (may be taken down after evaluation):
 
-       python run_extraction_test.py
+- API: https://venturelens-api-13450891254.asia-south1.run.app
+- UI: https://venturelens-ui-13450891254.asia-south1.run.app
 
-## Author
+## Status
 
-Suhani Kri — Capstone Project
+- Full agent workflow, API, UI, PDF outputs and cloud storage are built and deployed.
+- A full evaluation takes roughly 35 to 45 seconds on Cloud Run.
+- Scoring is out of 90 (three scorers at 30 points each) with a cutoff of 60.
