@@ -29,6 +29,7 @@ A multi-agent AI system on Google Cloud that screens startup pitch applications 
 | Hosting | Google Cloud Run |
 | Secrets | Google Secret Manager |
 | Email and document storage | Gmail API, Google Drive API |
+| Knowledge base (RAG) | Vertex AI RAG Engine, documents in Google Drive |
 | PDF reports | fpdf2 |
 
 Every application is saved in three places on Google Cloud: the uploaded PDFs go to Cloud Storage, the full result goes to Firestore and one summary row goes to BigQuery. It is also saved in Google Drive (see below).
@@ -65,6 +66,37 @@ gcloud secrets add-iam-policy-binding venturelens-oauth-token --member="serviceA
 
 While the OAuth app is in **Testing** mode, Google expires the sign-in after 7 days. To renew it, run `python authorize_google.py`, add the new token with `gcloud secrets versions add venturelens-oauth-token --data-file=token.json`, and redeploy the API. Publishing the consent screen to production removes the 7-day limit.
 
+## Knowledge base (RAG)
+
+The founder diagnostic report is grounded in reference documents, so improvement advice is specific and names its sources, instead of coming only from the language model.
+
+1. The reference documents live in a Google Drive folder.
+2. Vertex AI RAG Engine reads that folder and indexes it as a searchable knowledge base (region `asia-south1`).
+3. When an application is rejected, the pipeline turns its rejection drivers (the scorers' flags, or the failed GST checks) into search queries and retrieves the best-matching passages.
+4. The Founder Diagnostic Agent receives those passages with the score data. It bases its improvement steps on them, lists the documents it used in `sources`, and never cites a document that is not relevant. The PDF prints a Sources section.
+
+If retrieval fails or no knowledge base is configured, the report is still produced without sources, so a search problem never blocks a founder's report.
+
+### Load or update the documents
+
+```
+python rag_setup.py "<Google Drive folder link>"
+```
+
+This creates the knowledge base on first use (and saves `RAG_CORPUS` to `.env`), and adds new files on later runs. Share the Drive folder with Vertex AI's RAG service account as Viewer first. To check retrieval: `python rag_test.py "how to build a bottom-up TAM"`.
+
+To use it on Cloud Run, add the settings to the API service:
+
+```
+gcloud run deploy venturelens-api --source . --region asia-south1 --update-env-vars "RAG_CORPUS=<corpus resource name>,RAG_LOCATION=asia-south1"
+```
+
+### Notes
+
+- The three guides in `data/knowledge/` are **sample content**, each labelled as not official FICCI FLO criteria. Replace them with real program documents before relying on the reports.
+- Search needs an embedding call for each query, so a large batch of rejections can hit the Vertex AI embedding quota (`429 RESOURCE_EXHAUSTED`). Request a quota increase for volume.
+- The `agentplatform` RAG module is marked experimental by Google and may change. All RAG code is in `knowledge.py` and `rag_setup.py`.
+
 ## Project structure
 
 ```
@@ -75,6 +107,9 @@ app.py               Streamlit frontend
 gcp_services.py      Cloud Storage, Firestore and BigQuery persistence
 google_workspace.py  Gmail and Google Drive client
 delivery.py          sends each application's outputs to Drive and Gmail
+knowledge.py        retrieves reference passages for the founder diagnostic (RAG)
+rag_setup.py        creates the knowledge base and imports a Drive folder
+run_agent.py        runs one agent at a time, saving JSON to data/output/
 authorize_google.py  one-time Google sign-in that saves token.json
 pdf_reports.py       committee memo and founder diagnostic PDFs
 config.py            model name
@@ -93,6 +128,8 @@ Set these in `.env` locally, or as environment variables on Cloud Run.
 | `GOOGLE_CLOUD_PROJECT` | Google Cloud project id |
 | `GOOGLE_CLOUD_LOCATION` | Vertex AI location (`global`) |
 | `GCS_BUCKET` | Cloud Storage bucket for uploads |
+| `RAG_CORPUS` | Resource name of the knowledge base (set by `rag_setup.py`) |
+| `RAG_LOCATION` | Region of the knowledge base (`asia-south1`) |
 | `BQ_DATASET` | BigQuery dataset (default `venturelens`) |
 | `EMAIL_MODE` | `draft` (default) saves a Gmail draft, `send` sends the email |
 | `COMMITTEE_EMAIL` | Recipient of the committee memo for accepted startups |
@@ -156,3 +193,4 @@ Both services are public, and each evaluation uses Vertex AI credit and creates 
 - Full agent workflow, API, UI, PDF outputs, cloud storage, Gmail drafts and Drive storage are built and deployed.
 - A full evaluation takes roughly 20 to 80 seconds on Cloud Run.
 - Scoring is out of 100 (Market 30, Financial 40, Traction 30) with a cutoff of 60.
+- The founder diagnostic is grounded in a knowledge base of reference documents (RAG), with sources listed in the report.
