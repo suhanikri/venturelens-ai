@@ -27,6 +27,7 @@ load_dotenv()
 from google.genai import types
 
 import pipeline as p
+from knowledge import find_passages
 
 # ---- Input and output locations (edit these) ----
 PITCH_DECK_PATH = "sample_data/strong_pitch_deck.pdf"   # input 1
@@ -179,6 +180,7 @@ async def cmd_diagnostic(args):
         payload = {"report_type": "SCORE_BELOW_CUTOFF",
                    "final_score": judge["final_score"], "cutoff": judge["cutoff"],
                    "sub_scores": judge["sub_scores"], "scorer_details": scorer_details(scorers)}
+    payload["reference_passages"] = await find_passages(payload.get("scorer_details") or payload.get("failed_criteria", []))
     report = await p.call_agent(p.diagnostic_agent, [p.text_part(payload)])
     save(run, "07_report.json", report)
 

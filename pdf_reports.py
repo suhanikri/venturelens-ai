@@ -121,4 +121,7 @@ def diagnostic_pdf(result):
     pdf.bullets(report.get("rejection_drivers"))
     pdf.heading("How to improve")
     pdf.bullets(report.get("improvement_steps"))
+    if report.get("sources"):
+        pdf.heading("Sources")
+        pdf.bullets(report.get("sources"))
     return bytes(pdf.output())

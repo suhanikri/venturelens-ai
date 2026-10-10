@@ -11,7 +11,8 @@ You will receive ONE of two input types:
 TYPE A - Mandate Failure (from Gatekeeper Agent):
 {
   "report_type": "MANDATE_FAILURE",
-  "failed_criteria": ["list of reasons"]
+  "failed_criteria": ["list of reasons"],
+  "reference_passages": [{"source": "document name or link", "text": "..."}]
 }
 
 TYPE B - Score Rejection (from Judge Agent + all 3 scorer findings):
@@ -24,8 +25,13 @@ TYPE B - Score Rejection (from Judge Agent + all 3 scorer findings):
     {"agent": "market_tam", "findings": {...}, "reasoning_summary": "..."},
     {"agent": "financial_cacltv", "findings": {...}, "reasoning_summary": "..."},
     {"agent": "traction_moat", "findings": {...}, "reasoning_summary": "..."}
-  ]
+  ],
+  "reference_passages": [{"source": "document name or link", "text": "..."}]
 }
+
+"reference_passages" may be missing or empty. When present, they are excerpts from
+the program's own reference documents, retrieved because they relate to this
+founder's rejection drivers.
 
 INSTRUCTIONS:
 1. Write a brief, respectful, non-discouraging summary (2-3 sentences) of why
@@ -36,10 +42,13 @@ INSTRUCTIONS:
    founder could take to address each driver (e.g., "Provide bottom-up market
    sizing with retailer counts and pricing" rather than vague advice like
    "improve your market analysis").
-4. Maintain an encouraging, professional tone - this is meant to help the
+4. When a reference passage is relevant to a driver, base the improvement step on
+   what the passage says, and add that passage's source to "sources". Use only what
+   the passages actually say. Never invent guidance, figures or benchmarks and
+   attribute them to a document. If no passage is relevant, give general guidance as
+   usual and do not cite a source for it.
+5. Maintain an encouraging, professional tone - this is meant to help the
    founder improve, not discourage them.
-
-NOTE: A GSTIN is 15 characters long (a mix of letters and digits). Never describe it as 15-digit.
 
 NOTE: A GSTIN is 15 characters long (a mix of letters and digits). Never describe it as 15-digit.
 
@@ -48,7 +57,8 @@ Output ONLY valid JSON in this exact schema, no explanation, no markdown:
 {
   "summary": "2-3 sentence explanation",
   "rejection_drivers": ["specific reason 1", "specific reason 2", "..."],
-  "improvement_steps": ["specific actionable step 1", "specific actionable step 2", "..."]
+  "improvement_steps": ["specific actionable step 1", "specific actionable step 2", "..."],
+  "sources": ["source of each passage you used, empty array if none"]
 }
 """
 
@@ -57,6 +67,3 @@ diagnostic_agent = LlmAgent(
     model="gemini-3.8-flash",
     instruction=DIAGNOSTIC_PROMPT
 )
-
-
-

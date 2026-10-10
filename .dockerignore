@@ -10,3 +10,5 @@ client_secret.json
 token.json
 
 data/output/
+
+data/knowledge/

@@ -13,6 +13,7 @@ from agents.traction_agent import traction_agent
 from agents.judge_agent import judge_agent
 from agents.diagnostic_agent import diagnostic_agent
 from agents.memo_agent import memo_agent
+from knowledge import find_passages
 
 CUTOFF = 60
 
@@ -81,6 +82,7 @@ async def run_pipeline(pitch_bytes, gst_bytes, cutoff=CUTOFF, call=call_agent):
         report = await call(diagnostic_agent, [text_part({
             "report_type": "MANDATE_FAILURE",
             "failed_criteria": gate.get("failed_criteria", []),
+            "reference_passages": await find_passages(gate.get("failed_criteria", [])),
         })])
         return {"status": "REJECTED_MANDATE", "extracted": extracted,
                 "gate": gate, "report": report}
@@ -130,6 +132,7 @@ async def run_pipeline(pitch_bytes, gst_bytes, cutoff=CUTOFF, call=call_agent):
 
     report = await call(diagnostic_agent, [text_part({
         "report_type": "SCORE_BELOW_CUTOFF",
+        "reference_passages": await find_passages(scorer_details),
         "final_score": total, "cutoff": cutoff, "sub_scores": sub_scores,
         "scorer_details": scorer_details,
     })])
