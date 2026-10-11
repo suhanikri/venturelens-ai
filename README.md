@@ -1,4 +1,4 @@
-﻿# VentureLens: FICCI FLO Multi-Agent Pitch Screening and Founder Feedback Engine
+# VentureLens: FICCI FLO Multi-Agent Pitch Screening and Founder Feedback Engine
 
 A multi-agent AI system on Google Cloud that screens startup pitch applications and produces transparent outputs for both the screening committee and the founder.
 
@@ -80,10 +80,10 @@ If retrieval fails or no knowledge base is configured, the report is still produ
 ### Load or update the documents
 
 ```
-python rag_setup.py "<Google Drive folder link>"
+python -m rag.setup "<Google Drive folder link>"
 ```
 
-This creates the knowledge base on first use (and saves `RAG_CORPUS` to `.env`), and adds new files on later runs. Share the Drive folder with Vertex AI's RAG service account as Viewer first. To check retrieval: `python rag_test.py "how to build a bottom-up TAM"`.
+This creates the knowledge base on first use (and saves `RAG_CORPUS` to `.env`), and adds new files on later runs. Share the Drive folder with Vertex AI's RAG service account as Viewer first. To check retrieval: `python -m rag.query "how to build a bottom-up TAM"`.
 
 To use it on Cloud Run, add the settings to the API service:
 
@@ -95,7 +95,7 @@ gcloud run deploy venturelens-api --source . --region asia-south1 --update-env-v
 
 - The three guides in `data/knowledge/` are **sample content**, each labelled as not official FICCI FLO criteria. Replace them with real program documents before relying on the reports.
 - Search needs an embedding call for each query, so a large batch of rejections can hit the Vertex AI embedding quota (`429 RESOURCE_EXHAUSTED`). Request a quota increase for volume.
-- The `agentplatform` RAG module is marked experimental by Google and may change. All RAG code is in `knowledge.py` and `rag_setup.py`.
+- The `agentplatform` RAG module is marked experimental by Google and may change. All RAG code is in the `rag/` folder.
 
 ## Guardrails and API protection
 
@@ -148,8 +148,7 @@ app.py               Streamlit frontend
 gcp_services.py      Cloud Storage, Firestore and BigQuery persistence
 google_workspace.py  Gmail and Google Drive client
 delivery.py          sends each application's outputs to Drive and Gmail
-knowledge.py        retrieves reference passages for the founder diagnostic (RAG)
-rag_setup.py        creates the knowledge base and imports a Drive folder
+rag/                RAG: knowledge.py (retrieval), setup.py (create and import), query.py (test search)
 run_agent.py        runs one agent at a time, saving JSON to data/output/
 guardrails/         input and output checks, human-review flags
 tests/              offline tests (fake agents) and one-agent-at-a-time test scripts

@@ -1,6 +1,6 @@
-﻿"""Creates the VentureLens knowledge base in Vertex AI RAG Engine and imports a
+"""Creates the VentureLens knowledge base in Vertex AI RAG Engine and imports a
 Google Drive folder. Safe to run again to add new documents.
-  python rag_setup.py <Google Drive folder link>"""
+  python -m rag.setup <Google Drive folder link>"""
 import os
 import re
 import sys
@@ -12,7 +12,7 @@ import agentplatform
 from agentplatform import types
 
 if len(sys.argv) < 2:
-    sys.exit("Usage: python rag_setup.py <Google Drive folder link>")
+    sys.exit("Usage: python -m rag.setup <Google Drive folder link>")
 link = sys.argv[1]
 
 match = re.search(r"/folders/([A-Za-z0-9_-]+)", link)

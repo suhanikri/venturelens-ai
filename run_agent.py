@@ -1,4 +1,4 @@
-﻿"""Run one VentureLens agent at a time. Each agent reads the saved output of the
+"""Run one VentureLens agent at a time. Each agent reads the saved output of the
 agents before it and saves its own output as JSON in data/output/<run_id>/.
 
   python run_agent.py extraction
@@ -27,7 +27,7 @@ load_dotenv()
 from google.genai import types
 
 import pipeline as p
-from knowledge import find_passages
+from rag.knowledge import find_passages
 
 # ---- Input and output locations (edit these) ----
 PITCH_DECK_PATH = "sample_data/strong_pitch_deck.pdf"   # input 1

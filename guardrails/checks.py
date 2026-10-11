@@ -1,7 +1,7 @@
-﻿"""Applies the guardrails to a finished pipeline result."""
+"""Applies the guardrails to a finished pipeline result."""
 from guardrails.input_guardrails import validate_extraction, validate_upload
 from guardrails.output_guardrails import review_flags, validate_memo, validate_report, validate_scorer
-from knowledge import RETRIEVED
+from rag.knowledge import RETRIEVED
 
 
 class GuardrailError(Exception):

@@ -10,7 +10,7 @@ import os
 
 os.environ.pop("RAG_CORPUS", None)
 
-import knowledge
+from rag import knowledge
 import pipeline
 from guardrails.checks import GuardrailError
 

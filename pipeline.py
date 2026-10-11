@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import json
 import re
 
@@ -13,7 +13,7 @@ from agents.traction_agent import traction_agent
 from agents.judge_agent import judge_agent
 from agents.diagnostic_agent import diagnostic_agent
 from agents.memo_agent import memo_agent
-from knowledge import RETRIEVED, find_passages
+from rag.knowledge import RETRIEVED, find_passages
 from guardrails.checks import apply_guardrails, check_upload
 
 CUTOFF = 60

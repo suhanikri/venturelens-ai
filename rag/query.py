@@ -1,10 +1,10 @@
-﻿"""Ask the knowledge base a question:  python rag_test.py "how to build a bottom-up TAM" """
+"""Ask the knowledge base a question:  python -m rag.query "how to build a bottom-up TAM" """
 import sys
 
 from dotenv import load_dotenv
 
 load_dotenv()
-import knowledge
+from rag import knowledge
 
 query = " ".join(sys.argv[1:]) or "market sizing"
 results = knowledge.search(query)
