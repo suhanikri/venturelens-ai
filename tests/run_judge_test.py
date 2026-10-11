@@ -1,23 +1,29 @@
-﻿import asyncio
+# project-root import path
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+
+import asyncio
 import json
 from dotenv import load_dotenv
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 
-from agents.diagnostic_agent import diagnostic_agent
+from agents.judge_agent import judge_agent
 
 load_dotenv()
 
-SAMPLE_MANDATE_FAILURE = {
-  "report_type": "MANDATE_FAILURE",
-  "failed_criteria": [
-    "GST number is not disclosed",
-    "GST format is invalid",
-    "GST validity status is not Active"
+# Using our actual results from the 3 scorer agents we just ran
+SCORER_INPUTS = {
+  "cutoff": 60,
+  "scorer_outputs": [
+    {"agent": "market_tam", "score": 16, "max_score": 30},
+    {"agent": "financial_cacltv", "score": 27, "max_score": 30},
+    {"agent": "traction_moat", "score": 19, "max_score": 30}
   ]
 }
 
-runner = InMemoryRunner(agent=diagnostic_agent, app_name="venturelens")
+runner = InMemoryRunner(agent=judge_agent, app_name="venturelens")
 
 async def main():
     session = await runner.session_service.create_session(
@@ -26,7 +32,7 @@ async def main():
 
     user_message = types.Content(
         role="user",
-        parts=[types.Part(text=json.dumps(SAMPLE_MANDATE_FAILURE))]
+        parts=[types.Part(text=json.dumps(SCORER_INPUTS))]
     )
 
     full_response_text = ""

@@ -1,4 +1,9 @@
-﻿from pdf_reports import build_memo, diagnostic_pdf
+# project-root import path
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+
+from pdf_reports import build_memo, diagnostic_pdf
 
 scorers = [{"agent": "market_tam", "max_score": 30},
            {"agent": "financial_cacltv", "max_score": 30},
@@ -32,8 +37,8 @@ mandate = {
 }
 
 data, pages = build_memo(accepted)
-open("memo_test.pdf", "wb").write(data)
+open("data/examples/memo_test.pdf", "wb").write(data)
 print("memo pages:", pages)
-open("diagnostic_test.pdf", "wb").write(diagnostic_pdf(rejected))
-open("diagnostic_mandate_test.pdf", "wb").write(diagnostic_pdf(mandate))
+open("data/examples/diagnostic_test.pdf", "wb").write(diagnostic_pdf(rejected))
+open("data/examples/diagnostic_mandate_test.pdf", "wb").write(diagnostic_pdf(mandate))
 print("done")

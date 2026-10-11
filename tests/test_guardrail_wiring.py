@@ -1,4 +1,9 @@
-﻿"""Checks that the guardrails are wired into run_pipeline, using fake agents (no model calls)."""
+# project-root import path
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+
+"""Checks that the guardrails are wired into run_pipeline, using fake agents (no model calls)."""
 import asyncio
 import json
 import os

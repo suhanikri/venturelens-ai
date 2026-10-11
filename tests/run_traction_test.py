@@ -1,26 +1,31 @@
-﻿import asyncio
+# project-root import path
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+
+import asyncio
 import json
 from dotenv import load_dotenv
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 
-from agents.financial_agent import financial_agent
+from agents.traction_agent import traction_agent
 
 load_dotenv()
 
 SAMPLE_EXTRACTED_JSON = {
   "founder_info": {"startup_name": "EcoCart", "sector": "Sustainable E-commerce"},
   "pitch_content": {
-    "financials": {
-      "revenue": "INR 18 Lakhs (last 12 months)",
-      "cac": "INR 450 per customer",
-      "ltv": "INR 3,200 per customer",
-      "burn_rate": "INR 2 Lakhs per month"
+    "solution": "EcoCart provides a plug-in analytics dashboard that helps online stores switch to sustainable packaging and track carbon footprint per order.",
+    "traction_metrics": {
+      "customers": "340 paying merchants",
+      "mrr": "INR 1.5 Lakhs",
+      "growth_rate": "22% month-over-month"
     }
   }
 }
 
-runner = InMemoryRunner(agent=financial_agent, app_name="venturelens")
+runner = InMemoryRunner(agent=traction_agent, app_name="venturelens")
 
 async def main():
     session = await runner.session_service.create_session(

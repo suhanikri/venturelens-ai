@@ -1,26 +1,29 @@
-﻿import asyncio
+# project-root import path
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+
+import asyncio
 import json
 from dotenv import load_dotenv
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 
-from agents.traction_agent import traction_agent
+from agents.judge_agent import judge_agent
 
 load_dotenv()
 
-SAMPLE_EXTRACTED_JSON = {
-  "founder_info": {"startup_name": "EcoCart", "sector": "Sustainable E-commerce"},
-  "pitch_content": {
-    "solution": "EcoCart provides a plug-in analytics dashboard that helps online stores switch to sustainable packaging and track carbon footprint per order.",
-    "traction_metrics": {
-      "customers": "340 paying merchants",
-      "mrr": "INR 1.5 Lakhs",
-      "growth_rate": "22% month-over-month"
-    }
-  }
+# Deliberately low scores to test the REJECTED path
+SCORER_INPUTS = {
+  "cutoff": 60,
+  "scorer_outputs": [
+    {"agent": "market_tam", "score": 10, "max_score": 30},
+    {"agent": "financial_cacltv", "score": 12, "max_score": 30},
+    {"agent": "traction_moat", "score": 8, "max_score": 30}
+  ]
 }
 
-runner = InMemoryRunner(agent=traction_agent, app_name="venturelens")
+runner = InMemoryRunner(agent=judge_agent, app_name="venturelens")
 
 async def main():
     session = await runner.session_service.create_session(
@@ -29,7 +32,7 @@ async def main():
 
     user_message = types.Content(
         role="user",
-        parts=[types.Part(text=json.dumps(SAMPLE_EXTRACTED_JSON))]
+        parts=[types.Part(text=json.dumps(SCORER_INPUTS))]
     )
 
     full_response_text = ""

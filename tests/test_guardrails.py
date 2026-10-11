@@ -1,4 +1,9 @@
-﻿from guardrails.input_guardrails import validate_email, validate_extraction, validate_upload
+# project-root import path
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+
+from guardrails.input_guardrails import validate_email, validate_extraction, validate_upload
 from guardrails.output_guardrails import review_flags, validate_memo, validate_report, validate_scorer
 
 fails = 0

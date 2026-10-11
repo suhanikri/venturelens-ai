@@ -152,14 +152,15 @@ knowledge.py        retrieves reference passages for the founder diagnostic (RAG
 rag_setup.py        creates the knowledge base and imports a Drive folder
 run_agent.py        runs one agent at a time, saving JSON to data/output/
 guardrails/         input and output checks, human-review flags
-test_guardrails.py, test_guardrail_wiring.py, test_pipeline_routing.py   offline tests with fake agents
+tests/              offline tests (fake agents) and one-agent-at-a-time test scripts
+scripts/            sample-pitch generators and one-off helper scripts
 authorize_google.py  one-time Google sign-in that saves token.json
 pdf_reports.py       committee memo and founder diagnostic PDFs
 config.py            model name
 sample_data/         sample pitch decks and GST documents
 ```
 
-Sample data covers every route: `strong_*` (accepted), `weak_*` (rejected on score), `bad_gst_document.pdf` with `dummy_pitch_deck.pdf` (rejected on mandate), plus the original `dummy_*` EcoCart files. The `make_*.py` scripts regenerate them.
+Sample data covers every route: `strong_*` (accepted), `weak_*` (rejected on score), `bad_gst_document.pdf` with `dummy_pitch_deck.pdf` (rejected on mandate), plus the original `dummy_*` EcoCart files. The `scripts/make_*.py` scripts regenerate them.
 
 ## Settings
 

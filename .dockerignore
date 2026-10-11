@@ -12,3 +12,6 @@ token.json
 data/output/
 
 data/knowledge/
+tests/
+scripts/
+data/examples/

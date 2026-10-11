@@ -1,33 +1,42 @@
-﻿import asyncio
+# project-root import path
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+
+import asyncio
 import json
+import os
 from dotenv import load_dotenv
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 
-from agents.judge_agent import judge_agent
+from agents.extraction_agent import extraction_agent
 
 load_dotenv()
 
-# Using our actual results from the 3 scorer agents we just ran
-SCORER_INPUTS = {
-  "cutoff": 60,
-  "scorer_outputs": [
-    {"agent": "market_tam", "score": 16, "max_score": 30},
-    {"agent": "financial_cacltv", "score": 27, "max_score": 30},
-    {"agent": "traction_moat", "score": 19, "max_score": 30}
-  ]
-}
+PITCH_DECK_PATH = "sample_data/dummy_pitch_deck.pdf"
+GST_DOC_PATH = "sample_data/dummy_gst_document.pdf"
 
-runner = InMemoryRunner(agent=judge_agent, app_name="venturelens")
+runner = InMemoryRunner(agent=extraction_agent, app_name="venturelens")
 
 async def main():
     session = await runner.session_service.create_session(
         app_name="venturelens", user_id="test_user"
     )
 
+    with open(PITCH_DECK_PATH, "rb") as f:
+        pitch_deck_bytes = f.read()
+
+    with open(GST_DOC_PATH, "rb") as f:
+        gst_doc_bytes = f.read()
+
     user_message = types.Content(
         role="user",
-        parts=[types.Part(text=json.dumps(SCORER_INPUTS))]
+        parts=[
+            types.Part.from_bytes(data=pitch_deck_bytes, mime_type="application/pdf"),
+            types.Part.from_bytes(data=gst_doc_bytes, mime_type="application/pdf"),
+            types.Part(text="Extract the data from this pitch deck and GST document.")
+        ]
     )
 
     full_response_text = ""

@@ -1,4 +1,9 @@
-﻿import asyncio
+# project-root import path
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
+
+import asyncio
 import json
 from dotenv import load_dotenv
 from google.adk.runners import InMemoryRunner
@@ -8,23 +13,23 @@ from agents.gatekeeper_agent import gatekeeper_agent
 
 load_dotenv()
 
-# Deliberately BAD data - missing GST, to test failure routing
-SAMPLE_FAILING_JSON = {
-  "founder_info": {"startup_name": "ShadyStartup", "sector": "Retail"},
+# This is the actual output we got from the Extraction Agent test
+SAMPLE_EXTRACTED_JSON = {
+  "founder_info": {"startup_name": "EcoCart", "sector": "Sustainable E-commerce"},
   "gst_details": {
-    "gst_number": "not disclosed",
-    "registration_date": "not disclosed",
-    "validity_status": "not disclosed"
+    "gst_number": "27AABCE1234F1Z5",
+    "registration_date": "14/03/2023",
+    "validity_status": "Active"
   },
   "pitch_content": {
-    "problem_statement": "Some problem.",
-    "solution": "Some solution.",
-    "market_claims": {"tam": "not disclosed", "sam": "not disclosed", "som": "not disclosed"},
-    "financials": {"revenue": "not disclosed", "cac": "not disclosed", "ltv": "not disclosed", "burn_rate": "not disclosed"},
-    "traction_metrics": {"customers": "not disclosed", "mrr": "not disclosed", "growth_rate": "not disclosed"},
-    "team_info": "not disclosed"
+    "problem_statement": "Small retailers lack affordable tools to track and reduce packaging waste.",
+    "solution": "EcoCart provides a plug-in analytics dashboard.",
+    "market_claims": {"tam": "$12 Billion", "sam": "$2 Billion", "som": "$50 Million"},
+    "financials": {"revenue": "INR 18 Lakhs", "cac": "INR 450", "ltv": "INR 3200", "burn_rate": "INR 2 Lakhs"},
+    "traction_metrics": {"customers": "340", "mrr": "INR 1.5 Lakhs", "growth_rate": "22%"},
+    "team_info": "Founded by two IIT graduates."
   },
-  "extraction_confidence": 0.4
+  "extraction_confidence": 1.0
 }
 
 runner = InMemoryRunner(agent=gatekeeper_agent, app_name="venturelens")
@@ -36,7 +41,7 @@ async def main():
 
     user_message = types.Content(
         role="user",
-        parts=[types.Part(text=json.dumps(SAMPLE_FAILING_JSON))]
+        parts=[types.Part(text=json.dumps(SAMPLE_EXTRACTED_JSON))]
     )
 
     full_response_text = ""
