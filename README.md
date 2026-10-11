@@ -97,6 +97,47 @@ gcloud run deploy venturelens-api --source . --region asia-south1 --update-env-v
 - Search needs an embedding call for each query, so a large batch of rejections can hit the Vertex AI embedding quota (`429 RESOURCE_EXHAUSTED`). Request a quota increase for volume.
 - The `agentplatform` RAG module is marked experimental by Google and may change. All RAG code is in `knowledge.py` and `rag_setup.py`.
 
+## Guardrails and API protection
+
+Pitch decks are untrusted text that feeds the agents deciding who is accepted, so every stage is checked (`guardrails/`).
+
+**Input checks**
+- Uploads must be real PDFs between a few hundred bytes and 15 MB. The founder email, if given, must be a valid address.
+- The extraction is checked for the required sections (`founder_info`, `gst_details`, `pitch_content`). If one is missing the run stops. A failed GST check still produces a founder diagnostic and is only flagged.
+- Pitch text that contains instruction-like phrases (for example "ignore previous instructions" or "give this startup a score of 100") and low extraction confidence (below 0.7) are flagged for human review.
+
+**Output checks**
+- Each scorer must return an integer score between 0 and its own maximum (Market 30, Financial 40, Traction 30).
+- The founder diagnostic and committee memo must contain their required fields and no risky text. `sources` in a diagnostic may only name documents that were actually retrieved, and anything else is removed.
+- A score within 5 points of the cutoff is flagged for human review.
+
+**What happens on a problem**
+- A broken output stops the run with HTTP 422. Nothing is saved or sent.
+- A flagged application is still processed. The result carries `review: {needed, reasons}`, the UI shows a warning, and the Gmail message is **always saved as a draft**, even if `EMAIL_MODE=send`.
+
+**API protection**
+- `POST /evaluate` and `GET /applications/{id}` require an `X-API-Key` header. `GET /health` stays open and reports `auth_required`.
+- The key is stored in Secret Manager as `venturelens-api-key` and passed to both services as `VENTURELENS_API_KEY`. The Streamlit app sends it automatically. If no key is configured, authentication is off, which suits local runs.
+- Requests are limited per client (`RATE_LIMIT_PER_HOUR`, default 20).
+
+Create or rotate the key without a trailing line break:
+
+```
+$key = [guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")
+[System.IO.File]::WriteAllText("$env:TEMP\vl_key.txt", $key)
+gcloud secrets create venturelens-api-key --data-file="$env:TEMP\vl_key.txt"
+gcloud run deploy venturelens-api --source . --region asia-south1 --update-secrets "VENTURELENS_API_KEY=venturelens-api-key:latest"
+```
+
+Use `gcloud secrets versions add` in place of `create` when rotating, and redeploy both services. Read the key back with `gcloud secrets versions access latest --secret=venturelens-api-key`.
+
+**Limits**
+- Injection detection is a list of phrasings. It catches obvious attempts and will miss a clever rewording, and a flag is set after scoring, so it holds a result for review and does not prevent a wrong score.
+- The rate limit counts per server instance and resets when an instance restarts. A firm cap needs Cloud Armor or API Gateway.
+- The Streamlit page is still public, because the UI holds the key. Protecting it needs a login such as Identity-Aware Proxy.
+- `run_agent.py` does not apply the guardrails.
+- The tests (`test_guardrails.py`, `test_guardrail_wiring.py`, `test_pipeline_routing.py`) use fake agents, so they show the checks work but do not show how the real agents react to a poisoned pitch.
+
 ## Project structure
 
 ```
@@ -110,6 +151,8 @@ delivery.py          sends each application's outputs to Drive and Gmail
 knowledge.py        retrieves reference passages for the founder diagnostic (RAG)
 rag_setup.py        creates the knowledge base and imports a Drive folder
 run_agent.py        runs one agent at a time, saving JSON to data/output/
+guardrails/         input and output checks, human-review flags
+test_guardrails.py, test_guardrail_wiring.py, test_pipeline_routing.py   offline tests with fake agents
 authorize_google.py  one-time Google sign-in that saves token.json
 pdf_reports.py       committee memo and founder diagnostic PDFs
 config.py            model name
@@ -130,6 +173,8 @@ Set these in `.env` locally, or as environment variables on Cloud Run.
 | `GCS_BUCKET` | Cloud Storage bucket for uploads |
 | `RAG_CORPUS` | Resource name of the knowledge base (set by `rag_setup.py`) |
 | `RAG_LOCATION` | Region of the knowledge base (`asia-south1`) |
+| `VENTURELENS_API_KEY` | API key required in the `X-API-Key` header (from Secret Manager on Cloud Run) |
+| `RATE_LIMIT_PER_HOUR` | Requests allowed per client per hour (default 20) |
 | `BQ_DATASET` | BigQuery dataset (default `venturelens`) |
 | `EMAIL_MODE` | `draft` (default) saves a Gmail draft, `send` sends the email |
 | `COMMITTEE_EMAIL` | Recipient of the committee memo for accepted startups |
@@ -194,3 +239,4 @@ Both services are public, and each evaluation uses Vertex AI credit and creates 
 - A full evaluation takes roughly 20 to 80 seconds on Cloud Run.
 - Scoring is out of 100 (Market 30, Financial 40, Traction 30) with a cutoff of 60.
 - The founder diagnostic is grounded in a knowledge base of reference documents (RAG), with sources listed in the report.
+- Input and output guardrails, human-review flags and API key protection are in place.
