@@ -1,9 +1,10 @@
-﻿import asyncio
+﻿FAKE_PDF = b"%PDF-1.4" + b"x" * 500
+import asyncio
 from pipeline import run_pipeline
 
 
 def score_obj(agent, score):
-    return {"agent": agent, "score": score, "max_score": 30,
+    return {"agent": agent, "score": score, "max_score": {"market_tam": 30, "financial_cacltv": 40, "traction_moat": 30}[agent],
             "findings": {"flags": []}, "reasoning_summary": "fake"}
 
 
@@ -34,10 +35,9 @@ def make_fake(gate_pass=True, scores=(16, 27, 19), judge_lies=None):
             return {"final_score": total,
                     "decision": "ACCEPTED" if total >= 60 else "REJECTED"}
         if name == "memo_agent":
-            return {"one_pager_summary": "fake memo"}
+            return {"one_pager_summary": "fake memo", "key_strengths": ["a"], "operational_red_flags": ["b"], "suggested_interview_questions": ["c"]}
         if name == "diagnostic_agent":
-            return {"summary": "fake report", "rejection_drivers": [],
-                    "improvement_steps": []}
+            return {"summary": "fake report", "rejection_drivers": ["fake driver"], "improvement_steps": ["fake step"]}
         raise ValueError(f"unexpected agent: {name}")
 
     return fake_call, calls
@@ -45,7 +45,7 @@ def make_fake(gate_pass=True, scores=(16, 27, 19), judge_lies=None):
 
 async def run_case(label, expect_status, must_call, must_not_call, **kwargs):
     fake, calls = make_fake(**kwargs)
-    result = await run_pipeline(b"pdf", b"pdf", cutoff=60, call=fake)
+    result = await run_pipeline(FAKE_PDF, FAKE_PDF, cutoff=60, call=fake)
     ok = (
         result["status"] == expect_status
         and all(c in calls for c in must_call)
@@ -79,3 +79,5 @@ async def main():
 
 
 asyncio.run(main())
+
+

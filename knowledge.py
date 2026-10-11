@@ -1,7 +1,10 @@
 ﻿"""Retrieval from the VentureLens knowledge base (Vertex AI RAG Engine).
 Returns [] when RAG is not configured or fails, so the pipeline never breaks."""
 import asyncio
+import contextvars
 import os
+
+RETRIEVED = contextvars.ContextVar("retrieved_sources", default=())
 
 TOP_K = 4
 MAX_QUERIES = 6
@@ -57,8 +60,10 @@ def _retrieve(queries):
 
 
 async def find_passages(items):
+    passages = []
     try:
-        return await asyncio.to_thread(_retrieve, _queries(items))
+        passages = await asyncio.to_thread(_retrieve, _queries(items))
     except Exception as e:
         print(f"[knowledge] retrieval skipped: {e}")
-        return []
+    RETRIEVED.set(tuple(sorted({p["source"] for p in passages})))
+    return passages

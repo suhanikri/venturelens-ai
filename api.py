@@ -9,10 +9,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+import collections
+import hmac
+import os
+
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 import delivery
+from guardrails.checks import GuardrailError
+from guardrails.input_guardrails import validate_email
 import gcp_services
 from pipeline import CUTOFF, run_pipeline
 
@@ -24,9 +30,29 @@ app.add_middleware(
 )
 
 
+API_KEY = os.getenv("VENTURELENS_API_KEY", "").strip()
+RATE_LIMIT = int(os.getenv("RATE_LIMIT_PER_HOUR", "20"))
+_hits = collections.defaultdict(list)
+
+
+def protect(request: Request, x_api_key: str = Header(default="")):
+    """Requires the X-API-Key header (when a key is configured) and limits requests per client."""
+    if API_KEY and not hmac.compare_digest(x_api_key.encode(), API_KEY.encode()):
+        raise HTTPException(401, "Missing or invalid API key.")
+    client = (request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+              or (request.client.host if request.client else "unknown"))
+    now = time.time()
+    recent = [t for t in _hits[client] if now - t < 3600]
+    if len(recent) >= RATE_LIMIT:
+        raise HTTPException(429, f"Rate limit reached ({RATE_LIMIT} requests per hour).")
+    recent.append(now)
+    _hits[client] = recent
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "cutoff": CUTOFF, "gcp_storage": gcp_services.configured()}
+    return {"status": "ok", "cutoff": CUTOFF, "gcp_storage": gcp_services.configured(),
+            "auth_required": bool(API_KEY)}
 
 
 async def read_pdf(upload: UploadFile, label: str) -> bytes:
@@ -40,7 +66,7 @@ async def read_pdf(upload: UploadFile, label: str) -> bytes:
     return data
 
 
-@app.post("/evaluate")
+@app.post("/evaluate", dependencies=[Depends(protect)])
 async def evaluate(
     pitch_deck: UploadFile = File(...),
     gst_document: UploadFile = File(...),
@@ -50,10 +76,16 @@ async def evaluate(
     """Run the pipeline, save to GCP, then deliver to Google Drive and Gmail."""
     pitch = await read_pdf(pitch_deck, "Pitch deck")
     gst = await read_pdf(gst_document, "GST document")
+    email_check = validate_email(founder_email)
+    if not email_check["ok"]:
+        raise HTTPException(400, email_check["reason"])
+    founder_email = email_check["cleaned_text"]
 
     started = time.time()
     try:
         result = await run_pipeline(pitch, gst, cutoff=cutoff)
+    except GuardrailError as e:
+        raise HTTPException(422, str(e))
     except RuntimeError as e:  # e.g. quota reached
         raise HTTPException(429, str(e))
     except Exception as e:
@@ -72,7 +104,7 @@ async def evaluate(
     return result
 
 
-@app.get("/applications/{application_id}")
+@app.get("/applications/{application_id}", dependencies=[Depends(protect)])
 def get_application(application_id: str):
     if not gcp_services.configured():
         raise HTTPException(503, "GCP storage is not configured.")
@@ -80,3 +112,4 @@ def get_application(application_id: str):
     if not record:
         raise HTTPException(404, "Application not found.")
     return record
+

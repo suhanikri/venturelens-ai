@@ -53,7 +53,7 @@ def deliver(result, pitch, gst, founder_email=""):
         elif not EMAIL_RE.match(to):
             out["email"] = "skipped: invalid email address"
         else:
-            r = gw.send_report_email(to, subject, body, [(pdf_name, pdf)])
+            r = gw.send_report_email(to, subject, body, [(pdf_name, pdf)], force_draft=bool((result.get("review") or {}).get("needed")))
             out["email"] = f"{r['mode']} for {to}"
     except Exception as e:
         out["email"] = f"failed: {e}"

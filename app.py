@@ -79,6 +79,7 @@ if st.button("Evaluate application", type="primary", disabled=not (pitch and gst
                     "gst_document": (gst.name, gst.getvalue(), "application/pdf"),
                 },
                 data={"founder_email": founder_email.strip()},
+                headers={"X-API-Key": os.getenv("VENTURELENS_API_KEY", "").strip()},
                 timeout=600,
             )
         except requests.exceptions.ConnectionError:
@@ -93,6 +94,9 @@ result = st.session_state.get("result")
 if result:
     status = result["status"]
     st.caption(f"Completed in {result.get('elapsed_seconds', '?')} seconds")
+    review = result.get("review") or {}
+    if review.get("needed"):
+        st.warning("Flagged for human review before this result is acted on: " + "; ".join(review.get("reasons", [])))
 
     if status == "ACCEPTED":
         st.success("Accepted. Committee memo ready.")
@@ -128,3 +132,4 @@ if result:
         file_name="venturelens_result.json",
         mime="application/json",
     )
+

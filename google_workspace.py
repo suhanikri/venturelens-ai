@@ -34,10 +34,10 @@ def _service(name, version):
     return build(name, version, credentials=get_credentials(), cache_discovery=False)
 
 
-def send_report_email(to, subject, body, attachments=None):
+def send_report_email(to, subject, body, attachments=None, force_draft=False):
     """attachments: list of (filename, pdf_bytes).
     EMAIL_MODE=draft (default) saves a Gmail draft; EMAIL_MODE=send sends it."""
-    mode = os.getenv("EMAIL_MODE", "draft").lower()
+    mode = "draft" if force_draft else os.getenv("EMAIL_MODE", "draft").lower()
     msg = EmailMessage()
     msg["To"] = to
     msg["Subject"] = subject

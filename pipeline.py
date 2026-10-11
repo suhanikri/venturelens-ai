@@ -13,7 +13,8 @@ from agents.traction_agent import traction_agent
 from agents.judge_agent import judge_agent
 from agents.diagnostic_agent import diagnostic_agent
 from agents.memo_agent import memo_agent
-from knowledge import find_passages
+from knowledge import RETRIEVED, find_passages
+from guardrails.checks import apply_guardrails, check_upload
 
 CUTOFF = 60
 
@@ -68,7 +69,7 @@ async def median_run(agent, parts, call, runs=RUNS):
     ordered = sorted(results, key=lambda r: int(r["score"]))
     return ordered[len(ordered) // 2]
 
-async def run_pipeline(pitch_bytes, gst_bytes, cutoff=CUTOFF, call=call_agent):
+async def _run_pipeline_core(pitch_bytes, gst_bytes, cutoff=CUTOFF, call=call_agent):
     # 1. Extraction
     extracted = await call(extraction_agent, [
         types.Part.from_bytes(data=pitch_bytes, mime_type="application/pdf"),
@@ -139,3 +140,10 @@ async def run_pipeline(pitch_bytes, gst_bytes, cutoff=CUTOFF, call=call_agent):
     return {"status": "REJECTED_SCORE", "extracted": extracted, "gate": gate,
             "scorers": scorers, "judge": judge, "report": report}
 
+
+async def run_pipeline(pitch_bytes, gst_bytes, cutoff=CUTOFF, call=call_agent):
+    """The full pipeline, with guardrails on the input and on every output."""
+    RETRIEVED.set(())
+    check_upload(pitch_bytes, gst_bytes)
+    result = await _run_pipeline_core(pitch_bytes, gst_bytes, cutoff=cutoff, call=call)
+    return apply_guardrails(result)
