@@ -11,7 +11,7 @@ from google.adk.runners import InMemoryRunner
 from google.genai import types
 
 load_dotenv()
-print("Loaded key:", os.getenv("GOOGLE_API_KEY"))
+print("API key loaded:", bool(os.getenv("GOOGLE_API_KEY")))
 
 # The simplest possible agent
 basic_agent = LlmAgent(
