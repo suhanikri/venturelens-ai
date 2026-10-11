@@ -31,15 +31,15 @@ app.add_middleware(
 
 
 API_KEY = os.getenv("VENTURELENS_API_KEY", "").strip()
+if not API_KEY:
+    raise RuntimeError("VENTURELENS_API_KEY is not set. Refusing to start.")
 RATE_LIMIT = int(os.getenv("RATE_LIMIT_PER_HOUR", "20"))
-_hits = collections.defaultdict(list)
-
 
 def protect(request: Request, x_api_key: str = Header(default="")):
     """Requires the X-API-Key header (when a key is configured) and limits requests per client."""
-    if API_KEY and not hmac.compare_digest(x_api_key.encode(), API_KEY.encode()):
+    if not hmac.compare_digest(x_api_key.encode(), API_KEY.encode()):
         raise HTTPException(401, "Missing or invalid API key.")
-    client = (request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    client = (request.headers.get("x-forwarded-for", "").split(",")[-1].strip()
               or (request.client.host if request.client else "unknown"))
     now = time.time()
     recent = [t for t in _hits[client] if now - t < 3600]
@@ -51,7 +51,7 @@ def protect(request: Request, x_api_key: str = Header(default="")):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "cutoff": CUTOFF, "gcp_storage": gcp_services.configured(),
+    return {"status": "ok", "gcp_storage": gcp_services.configured(),
             "auth_required": bool(API_KEY)}
 
 
@@ -71,7 +71,6 @@ async def evaluate(
     pitch_deck: UploadFile = File(...),
     gst_document: UploadFile = File(...),
     founder_email: str = Form(""),
-    cutoff: int = CUTOFF,
 ):
     """Run the pipeline, save to GCP, then deliver to Google Drive and Gmail."""
     pitch = await read_pdf(pitch_deck, "Pitch deck")
@@ -83,7 +82,7 @@ async def evaluate(
 
     started = time.time()
     try:
-        result = await run_pipeline(pitch, gst, cutoff=cutoff)
+                result = await run_pipeline(pitch, gst, cutoff=CUTOFF)
     except GuardrailError as e:
         raise HTTPException(422, str(e))
     except RuntimeError as e:  # e.g. quota reached

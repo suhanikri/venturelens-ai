@@ -16,6 +16,22 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 st.set_page_config(page_title="VentureLens", layout="centered")
 
 
+import hmac
+
+APP_PASSWORD = os.getenv("VENTURELENS_UI_PASSWORD", "").strip()
+if not APP_PASSWORD:
+    st.error("UI password is not configured.")
+    st.stop()
+
+if not st.session_state.get("authed"):
+    entered = st.text_input("Access password", type="password")
+    if entered and hmac.compare_digest(entered.encode(), APP_PASSWORD.encode()):
+        st.session_state["authed"] = True
+        st.rerun()
+    elif entered:
+        st.error("Incorrect password.")
+    st.stop()
+    
 def pretty(key):
     return str(key).replace("_", " ").capitalize()
 
